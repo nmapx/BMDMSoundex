@@ -22,10 +22,6 @@ require_once "library/Core.php";
 use dautkom\bmdm\library\Core;
 use dautkom\bmdm\library\BeiderMorse;
 use dautkom\bmdm\library\DaitchMokotoff;
-use Monolog\Formatter\LineFormatter;
-use Monolog\Handler\BrowserConsoleHandler;
-use Monolog\Handler\NullHandler;
-use Monolog\Logger;
 
 
 /**
@@ -54,15 +50,8 @@ class BMDM extends Core
 
         self::$input  = null;
         self::$logger = null;
-        $composer     = spl_autoload_functions();
         register_shutdown_function([$this, 'beforeShutdown']);
-
-        if (!empty($composer)) {
-            $this->tryMonologHandler();
-        }
-        else {
-            spl_autoload_register([$this, 'autoload']);
-        }
+        spl_autoload_register([$this, 'autoload']);
 
         if (!in_array($mode, ['gen', 'sep', 'ash'])) {
             $this->dbg("Unsupported mode argument passed: '$mode', falling back to default 'gen'");
@@ -187,46 +176,6 @@ class BMDM extends Core
         return ['code' => $code, 'languages' => $names];
 
     }
-
-
-    /**
-     * @param  bool $value
-     * @return void
-     */
-    public function setDebug($value)
-    {
-
-        self::$debug = (bool)$value;
-
-        if( self::$debug === true ) {
-            $this->tryMonologHandler();
-        }
-
-    }
-
-
-    /**
-     * Sets self::$logger to Monolog handler if it is possible
-     * If Monolog is not used, self::$logger will remain NULL and debugging will be printed to STDOUT
-     *
-     * @return void
-     */
-    private function tryMonologHandler()
-    {
-
-        if(class_exists('Monolog\Handler\BrowserConsoleHandler')) {
-
-            $handler   = self::$debug ? new BrowserConsoleHandler() : new NullHandler();
-            $formatter = new LineFormatter("%datetime% [[%level_name%]]{macro: autolabel} %message%", "H:i:s.u");
-
-            self::$logger = new Logger('debug');
-            self::$logger->pushHandler($handler);
-            $handler->setFormatter($formatter);
-
-        }
-
-    }
-
 
     /**
      * Convert Beider-Morse phonetic keys to Daitch-Mokotoff keys
